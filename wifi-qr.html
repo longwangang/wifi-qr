@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WiFi二维码生成器</title>
+    <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: bold;
+        }
+
+        input[type="text"],
+        input[type="password"],
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+            margin-bottom: 20px;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        .qr-container {
+            text-align: center;
+            margin-top: 20px;
+            padding: 20px;
+            border: 1px dashed #ddd;
+            border-radius: 5px;
+            display: none;
+        }
+
+        .qr-container.show {
+            display: block;
+        }
+
+        #qrcode {
+            margin: 0 auto;
+            padding: 10px;
+            background: white;
+            display: flex;
+            justify-content: center;
+        }
+
+        #qrcode img {
+            margin: 0 auto;
+            display: block;
+        }
+
+        .instructions {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f8f8;
+            border-radius: 5px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .instructions h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .instructions ul {
+            padding-left: 20px;
+        }
+
+        .instructions li {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>WiFi二维码生成器</h1>
+        <div class="form-group">
+            <label for="ssid">WiFi名称 (SSID)</label>
+            <input type="text" id="ssid" placeholder="请输入WiFi名称" required>
+        </div>
+        <div class="form-group">
+            <label for="password">WiFi密码</label>
+            <input type="password" id="password" placeholder="请输入WiFi密码">
+        </div>
+        <div class="form-group">
+            <label for="encryption">加密类型</label>
+            <select id="encryption">
+                <option value="WPA">WPA/WPA2</option>
+                <option value="WEP">WEP</option>
+                <option value="nopass">无密码</option>
+            </select>
+        </div>
+        <button onclick="generateQRCode()">生成二维码</button>
+        
+        <div class="qr-container" id="qrContainer">
+            <div id="qrcode"></div>
+            <p style="margin-top: 10px; color: #666;">扫描上方二维码即可连接WiFi</p>
+            <p style="margin-top: 5px; color: #ff6b6b; font-weight: bold;">※ 请使用手机相机扫码，不要使用微信扫码</p>
+        </div>
+
+        <div class="instructions">
+            <h3>使用说明</h3>
+            <ul>
+                <li>输入您的WiFi名称和密码</li>
+                <li>选择正确的加密类型（一般是WPA/WPA2）</li>
+                <li>点击"生成二维码"按钮</li>
+                <li><strong>请使用手机系统相机app扫描二维码</strong></li>
+                <li>iOS用户：直接打开相机对准二维码</li>
+                <li>安卓用户：
+                    <ul style="margin-left: 20px; margin-top: 5px;">
+                        <li>使用系统相机对准二维码</li>
+                        <li>或在系统设置 > WLAN/WiFi中寻找扫码连接选项</li>
+                        <li>部分手机需要在相机设置中开启"扫描二维码"功能</li>
+                    </ul>
+                </li>
+                <li>点击屏幕上出现的WiFi连接提示即可自动连接</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function generateQRCode() {
+            const ssid = document.getElementById('ssid').value;
+            const password = document.getElementById('password').value;
+            const encryption = document.getElementById('encryption').value;
+            
+            if (!ssid) {
+                alert('请输入WiFi名称！');
+                return;
+            }
+            
+            // 清除旧的二维码
+            document.getElementById('qrcode').innerHTML = '';
+            
+            // 构建WiFi配置字符串 - 使用正确的格式
+            // 注意：需要对特殊字符进行转义，以确保正确识别
+            const escapedSsid = ssid.replace(/([\\;,:"'])/g, '\\$1');
+            const escapedPassword = password.replace(/([\\;,:"'])/g, '\\$1');
+            
+            let wifiString = `WIFI:T:${encryption};S:${escapedSsid}`;
+            if (encryption !== 'nopass') {
+                wifiString += `;P:${escapedPassword}`;
+            }
+            wifiString += `;H:false;`;
+
+            // 生成二维码
+            new QRCode(document.getElementById('qrcode'), {
+                text: wifiString,
+                width: 200,
+                height: 200,
+                colorDark: '#000000',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.H
+            });
+
+            // 显示二维码容器
+            document.getElementById('qrContainer').classList.add('show');
+        }
+
+        // 添加输入验证
+        document.getElementById('ssid').addEventListener('input', function(e) {
+            this.value = this.value.trim();
+        });
+
+        // 当选择无密码时禁用密码输入
+        document.getElementById('encryption').addEventListener('change', function(e) {
+            const passwordInput = document.getElementById('password');
+            passwordInput.disabled = this.value === 'nopass';
+            if (this.value === 'nopass') {
+                passwordInput.value = '';
+            }
+        });
+    </script>
+</body>
+</html> 
